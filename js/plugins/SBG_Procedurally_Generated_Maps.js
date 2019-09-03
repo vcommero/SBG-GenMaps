@@ -54,28 +54,6 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
     }
 };
 
-// Transfer Player
-SBG.GenMaps.GameInterpreter_command201 = Game_Interpreter.prototype.command201;
-Game_Interpreter.prototype.command201 = function() {
-    console.log('command201');
-    // if (!$gameParty.inBattle() && !$gameMessage.isBusy()) {
-    //     var mapId, x, y;
-    //     if (this._params[0] === 0) {  // Direct designation
-    //         mapId = this._params[1];
-    //         x = this._params[2];
-    //         y = this._params[3];
-    //     } else {  // Designation with variables
-    //         mapId = $gameVariables.value(this._params[1]);
-    //         x = $gameVariables.value(this._params[2]);
-    //         y = $gameVariables.value(this._params[3]);
-    //     }
-    //     $gamePlayer.reserveTransfer(mapId, x, y, this._params[4], this._params[5]);
-    //     this.setWaitMode('transfer');
-    //     this._index++;
-    // }
-    SBG.GenMaps.GameInterpreter_command201.call(this);
-};
-
 //=============================================================================
 // DataManager
 //=============================================================================
@@ -94,10 +72,6 @@ DataManager.loadMapData = function(mapId) {
     //     this.makeEmptyMap();
     // }
     SBG.GenMaps.DataManager_loadMapData.call(this, mapId);
-    //console.log("loaded map data");
-    //console.log(JSON.stringify($dataMap));
-    //if ($dataMap.meta.generated_map == true) console.log("generated map");
-
 };
 
 SBG.GenMaps.DataManager_createGameObjects =
@@ -192,45 +166,21 @@ DataManager.onLoad = function(object) {
 };
 
 DataManager.mapOnLoadCallback = function() {
-    console.log('map callback');
     if ($dataMap.meta.GeneratedMap) {
-        console.log('generated map');
         $gameMap.processMap();
     }
 }
-
-//=============================================================================
-// Scene_Map
-//=============================================================================
-
-SBG.GenMaps.SceneMap_create = Scene_Map.prototype.create;
-Scene_Map.prototype.create = function() {
-    /*Scene_Base.prototype.create.call(this);
-    this._transfer = $gamePlayer.isTransferring();
-    var mapId = this._transfer ? $gamePlayer.newMapId() : $gameMap.mapId();
-    DataManager.loadMapData(mapId);*/
-    console.log("SceneMap create");
-    SBG.GenMaps.SceneMap_create.call(this);
-};
 
 //=============================================================================
 // Game_Map
 //=============================================================================
 
 Game_Map.prototype.addSetPiece = function(mapData, tile, posX, posY) {
-    console.log('Adding set piece at '+posX+' '+posY);
-    //console.log('mapdata: ');
-    //console.log(mapData);
-    //console.log(JSON.stringify(mapData));
-    //console.log('tile: ');
-    //console.log(JSON.stringify(tile));
-
     // Check if mapData is empty/ missing fields
     if (mapData.data === undefined ||
         mapData.height === undefined ||
         mapData.width === undefined ||
         mapData.events === undefined) {
-        console.log('mapData is empty');
         mapData = JSON.parse(JSON.stringify(tile));
         return mapData;
     }
@@ -294,12 +244,7 @@ Game_Map.prototype.addSetPiece = function(mapData, tile, posX, posY) {
 
     }
 
-    // console.log('expanded mapdata: ');
-    // console.log(JSON.stringify(mapData)+' length: '+mapData.data.length);
-    // console.log('tile: ');
-    // console.log(JSON.stringify(tile)+' length: '+tile.data.length);
 
-    console.log('Writing tile to map');
     //~~~ Write tile data into map ~~~//
     // Compute new tile position
     var newPosX = Math.max(0, posX);
@@ -313,24 +258,14 @@ Game_Map.prototype.addSetPiece = function(mapData, tile, posX, posY) {
         }
     }
 
-    // console.log('tileMap: '+JSON.stringify(tileMap));
 
     // Write tile data to map
     for (var i = 0, k = 0; i < mapData.data.length; i += (mapData.width * mapData.height)) {
         for (var j = 0; j < tileMap.length; j++) {
-            // console.log('mapdata index: '+((tileMap[j].x + (-(tileMap[j].y) * mapData.width)) + i)+' tile index: '+k);
-            //console.log('tile data: '+tile.data[k]+' map data: '+mapData.data[(tileMap[j].x + (-(tileMap[j].y) * mapData.width))]);
             mapData.data[(tileMap[j].x + (-(tileMap[j].y) * mapData.width)) + i] = tile.data[k];
             k++;
         }
-        // console.log('mapdata: ');
-        // console.log(JSON.stringify(mapData)+' length: '+mapData.data.length);
     }
-
-    // console.log('mapdata: ');
-    // console.log(JSON.stringify(mapData));
-    // console.log('tile: ');
-    // console.log(JSON.stringify(tile));
 
 
     //~~~ Fix event positions ~~~//
@@ -364,7 +299,6 @@ Game_Map.prototype.addSetPiece = function(mapData, tile, posX, posY) {
 }
 
 Game_Map.prototype.processMap = function() {
-    console.log('Tiling map');
     var tileMappings = [];
     var tilesArray = [];
 
@@ -380,9 +314,6 @@ Game_Map.prototype.processMap = function() {
             tileMappings[$dataMap.data[mapIndex] - 1].coords.unshift( ($dataMap.width * $dataMap.height) - i );
         }
     }
-
-    // console.log('tileMappings: ');
-    // console.log(JSON.stringify(tileMappings));
 
     // Split map into tiles
     for (var i = 0; i < $dataMap.data.length; i += ($dataMap.width * $dataMap.height)) {
@@ -437,9 +368,6 @@ Game_Map.prototype.processMap = function() {
 
     }
 
-    //console.log('tilesArray: ');
-    //console.log(JSON.stringify(tilesArray));
-    console.log('Saving raw map');
     this._rawMap = JSON.parse(JSON.stringify($dataMap));
     this._tileMappings = JSON.parse(JSON.stringify(tileMappings));
     this._tilesArray = JSON.parse(JSON.stringify(tilesArray));
@@ -449,37 +377,15 @@ Game_Map.prototype.processMap = function() {
 
 Game_Map.prototype.generateMap = function(mapTiles) {
     var generatorType = $dataMap.meta.MapGenerator;
-		if (!generatorType) {
-			throw "Missing MapGenerator metadata tag.";
-		}
+    if (!generatorType) {
+        throw "Missing MapGenerator metadata tag.";
+    }
     var newMapData = this[generatorType](mapTiles);
     $dataMap.width = newMapData.width;
     $dataMap.height = newMapData.height;
     $dataMap.data = newMapData.data;
     $dataMap.events = newMapData.events;
     return newMapData;
-}
-
-
-SBG.GenMaps.GameMap_setup = Game_Map.prototype.setup;
-Game_Map.prototype.setup = function(mapId) {
-    /*if (!$dataMap) {
-        throw new Error('The map data is not available');
-    }
-    this._mapId = mapId;
-    this._tilesetId = $dataMap.tilesetId;
-    this._displayX = 0;
-    this._displayY = 0;
-    this.refereshVehicles();
-    this.setupEvents();
-    this.setupScroll();
-    this.setupParallax();
-    this.setupBattleback();
-    this._needsRefresh = false;*/
-
-    console.log('map setup');
-    //console.log(JSON.stringify($dataMap));
-    SBG.GenMaps.GameMap_setup.call(this, mapId);
 }
 
 //=============================================================================
@@ -498,16 +404,9 @@ Game_Map_Seeds.prototype.initialize = function() {
 // Game_Player
 //=============================================================================
 
-SBG.GenMaps.GamePlayer_reserveTransfer = Game_Player.prototype.reserveTransfer;
-Game_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {
-    console.log('reserve transfer');
-    SBG.GenMaps.GamePlayer_reserveTransfer.call(this, mapId, x, y, d, fadeType);
-};
-
 SBG.GenMaps.GamePlayer_performTransfer = Game_Player.prototype.performTransfer;
 Game_Player.prototype.performTransfer = function() {
     if ($dataMap.meta.GeneratedMap) {
-        console.log('perform GenMaps transfer');
         if (this.isTransferring()) {
             this.setDirection(this._newDirection);
             if (this._newMapId !== $gameMap.mapId() || this._needsMapReload) {
@@ -519,14 +418,12 @@ Game_Player.prototype.performTransfer = function() {
             this.clearTransferInfo();
         }
     } else {
-        console.log('perform normal transfer');
         SBG.GenMaps.GamePlayer_performTransfer.call(this);
     }
 };
 
 
 Game_Player.prototype.SBG_GenMaps_locate = function(x, y) {
-    console.log('SBG locate');
     // Find set piece that x,y coords is located in
     var rawCoord = ($gameMap._rawMap.width * y) + x;
     var setPieceNumber = 0;
@@ -550,9 +447,6 @@ Game_Player.prototype.SBG_GenMaps_locate = function(x, y) {
     // and put their tile coords into arrays.
     var mapDataTileLabelSection = 
         $dataMap.data.slice($dataMap.data.length - ($dataMap.width * $dataMap.height), );
-    console.log('dataMap data slice: ' + JSON.stringify(mapDataTileLabelSection));
-    
-    console.log('tile number: ' + setPieceNumber);
 
     var setPiece = $gameMap._tilesArray[setPieceNumber];
 
